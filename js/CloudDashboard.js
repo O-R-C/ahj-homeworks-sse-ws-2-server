@@ -9,6 +9,7 @@ const Instance = require('./Instance')
 class CloudDashboard {
   #wss
   #storage
+  #workTimer = 2000
 
   constructor(wss, storage) {
     this.#wss = wss
@@ -26,6 +27,7 @@ class CloudDashboard {
   #connect() {
     this.#wss.on('connection', (ws) => {
       ws.send(this.#getStringData('Instances', this.#storage.get()))
+      console.log('🚀 ~ this.#storage.get():', this.#storage.get())
 
       ws.on('message', (data) => {
         this.#handleData(data, ws)
@@ -92,11 +94,13 @@ class CloudDashboard {
    */
   #handleCREATE(payload, ws) {
     const id = uuidv4()
+
     ws.send(this.#getStringData('Processing', { id, INFO: 'Received "Create command"' }))
+
     setTimeout(() => {
-      this.#storage.push(new Instance(payload))
+      this.#storage.push(new Instance(id))
       ws.send(this.#getStringData('CREATED', { id, INFO: 'Created' }))
-    }, 20000)
+    }, this.#workTimer)
   }
 
   /**
@@ -105,11 +109,25 @@ class CloudDashboard {
    * @param {Object} payload - Payload data
    */
   #handleSTART(payload, ws) {
-    ws.send(this.#getStringData('Processing', { id: payload, INFO: 'Received "Start command"' }))
+    const { id } = payload
+    ws.send(this.#getStringData('Processing', { id: id, INFO: 'Received "Start command"' }))
+
     setTimeout(() => {
-      this.#storage.findByProperty('id', payload).status = 'started'
-      ws.send(this.#getStringData('STARTED', { id: payload, INFO: 'Started' }))
-    }, 20000)
+      const instance = this.#storage.findByProperty('id', id)
+
+      if (!instance) {
+        ws.send(this.#getStringData('ERROR', { id: id, INFO: 'Instance not found' }))
+        return
+      }
+
+      if (instance.status === 'started') {
+        ws.send(this.#getStringData('ERROR', { id: id, INFO: 'Instance already started' }))
+        return
+      }
+
+      instance.status = 'started'
+      ws.send(this.#getStringData('STARTED', { id: id, INFO: 'Started' }))
+    }, this.#workTimer)
   }
 
   /**
@@ -118,11 +136,25 @@ class CloudDashboard {
    * @param {Object} payload - Payload data
    */
   #handleSTOP(payload, ws) {
-    ws.send(this.#getStringData('Processing', { id: payload, INFO: 'Received "Stop command"' }))
+    const { id } = payload
+    ws.send(this.#getStringData('Processing', { id: id, INFO: 'Received "Stop command"' }))
+
     setTimeout(() => {
-      this.#storage.findByProperty('id', payload).status = 'stopped'
-      ws.send(this.#getStringData('STOPPED', { id: payload, INFO: 'Stopped' }))
-    }, 20000)
+      const instance = this.#storage.findByProperty('id', id)
+
+      if (!instance) {
+        ws.send(this.#getStringData('ERROR', { id: id, INFO: 'Instance not found' }))
+        return
+      }
+
+      if (instance.status === 'stopped') {
+        ws.send(this.#getStringData('ERROR', { id: id, INFO: 'Instance already stopped' }))
+        return
+      }
+
+      instance.status = 'stopped'
+      ws.send(this.#getStringData('STOPPED', { id: id, INFO: 'Stopped' }))
+    }, this.#workTimer)
   }
 
   /**
@@ -131,11 +163,20 @@ class CloudDashboard {
    * @param {Object} payload - Payload data
    */
   #handleREMOVE(payload, ws) {
-    ws.send(this.#getStringData('Processing', { id: payload, INFO: 'Received "Remove command"' }))
+    const { id } = payload
+    ws.send(this.#getStringData('Processing', { id: id, INFO: 'Received "Remove command"' }))
+
     setTimeout(() => {
-      this.#storage.delete(payload)
-      ws.send(this.#getStringData('REMOVED', { id: payload, INFO: 'Removed' }))
-    }, 20000)
+      const instance = this.#storage.findByProperty('id', id)
+
+      if (!instance) {
+        ws.send(this.#getStringData('ERROR', { id: id, INFO: 'Instance not found' }))
+        return
+      }
+
+      this.#storage.delete(id)
+      ws.send(this.#getStringData('REMOVED', { id: id, INFO: 'Removed' }))
+    }, this.#workTimer)
   }
 }
 
