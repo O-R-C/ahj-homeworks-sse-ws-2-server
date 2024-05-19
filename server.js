@@ -7,9 +7,8 @@ const { koaBody } = require('koa-body')
 const router = require('./routes')
 const Koa = require('koa')
 const WS = require('ws')
-const UserList = require('./src/js/UserList')
-const ChatWS = require('./src/js/ChatWS')
-const ArrayStorage = require('./src/js/ArrayStorage')
+const CloudDashboard = require('./js/CloudDashboard')
+const ArrayStorage = require('./js/ArrayStorage')
 
 const app = new Koa()
 const server = HTTP.createServer(app)
@@ -26,9 +25,10 @@ app.use(koaStatic(path.join(__dirname, 'public')))
 app.use(koaBody({ json: true, text: true, urlencoded: true, multipart: true }))
 app.use(router())
 
-const wss = new WS.Server({ server, path: '/chat' })
-const chatWS = new ChatWS(wss, UserList, ArrayStorage)
-chatWS.init()
+const wss = new WS.Server({ server, path: '/dashboard' })
+const dashboard = new CloudDashboard(wss, new ArrayStorage())
+
+dashboard.init()
 
 app.on('error', (err) => {
   console.error(err)

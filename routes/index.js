@@ -1,8 +1,8 @@
 const combine = require('koa-combine-routers')
 
 const index = require('./index/index')
-const chat = require('./chat/')
+const dashboard = require('./dashboard')
 
-const router = combine([index, chat])
+const router = combine([index, dashboard])
 
 module.exports = router
