@@ -22,6 +22,7 @@
   "nodemonConfig": {
     "watch": [
       "src",
+      "js",
       "routes",
       "server.js"
     ],

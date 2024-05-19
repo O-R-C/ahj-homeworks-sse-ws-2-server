@@ -58,10 +58,10 @@ class ArrayStorage {
   /**
    * Removes item from the array
    *
-   * @param {*} item - item to delete
+   * @param {*} id - id of the item to remove
    */
-  delete(item) {
-    const index = this.#storage.indexOf(item)
+  delete(id) {
+    const index = this.#storage.indexOf((item) => item.id === id)
     this.#storage.splice(index, 1)
   }
 
