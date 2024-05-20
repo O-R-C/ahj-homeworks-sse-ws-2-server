@@ -9,7 +9,7 @@ const Instance = require('./Instance')
 class CloudDashboard {
   #wss
   #storage
-  #workTimer = 2000
+  #workTimer = 20000
 
   constructor(wss, storage) {
     this.#wss = wss
